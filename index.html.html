@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Server Timer for Blox Fruits: Raid &amp; Fruit Spawn Alarms</title>
+<meta name="description" content="Free Blox Fruits server timer for private and public servers with Factory Raid, Pirate Raid and fruit spawn alarms.">
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--text:#1b2233;--muted:#667085;--line:#dfe3ea;--acc:#2f6fed;--hot:#e5484d;--chip:#eef1f6;--note:#fff3cd;--notet:#7a4b00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#171e2e;--text:#e8ecf4;--muted:#93a0b8;--line:#28324a;--acc:#6ea0ff;--hot:#ff6b70;--chip:#1f2840;--note:#3a3216;--notet:#f1d98a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#171e2e;--text:#e8ecf4;--muted:#93a0b8;--line:#28324a;--acc:#6ea0ff;--hot:#ff6b70;--chip:#1f2840;--note:#3a3216;--notet:#f1d98a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:21px;margin:4px 0 2px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card.off{opacity:.45}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+label{font-size:13px;color:var(--muted)}
+input,select,button{font:inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+input[type=number]{width:74px}
+button{cursor:pointer;background:var(--acc);color:#fff;border:0;font-weight:600}
+button.ghost,.seg button:not(.on){background:var(--chip);color:var(--text);border:1px solid var(--line)}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:13px}
+.big{font-size:38px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--chip);border-radius:999px;padding:5px 11px;font-size:13px;font-variant-numeric:tabular-nums}
+.chip.done{opacity:.5}
+.chip.next{outline:2px solid var(--acc)}
+.list div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.list div:first-child{border-top:0}
+#alert{display:none;background:var(--hot);color:#fff;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-weight:700;cursor:pointer}
+.note{background:var(--note);color:var(--notet);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+.note a{color:inherit;font-weight:700}
+.err{color:var(--hot);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🍍 Server Timer for Blox Fruits</h1>
+<div class="muted" style="margin-bottom:12px">Enter your server’s clock once. Passed events clear themselves, milestones stay, alarms ring before fruit spawns and raids.</div>
+<div id="alert" onclick="this.style.display='none'"></div>
+
+<div class="card">
+<h2>Server type</h2>
+<div class="seg"><button id="bpriv" onclick="setMode('priv')">🔒 Private server</button><button id="bpub" onclick="setMode('pub')">🌐 Public server</button></div>
+<div class="row" style="margin-top:10px"><label>Sea</label><select id="sea"><option value="2">Sea 2 · Factory Raid</option><option value="3">Sea 3 · Pirate Raid</option></select>
+<label>Days</label><select id="day"><option value="auto">Auto (weekday / weekend)</option><option value="wd">Weekday</option><option value="we">Weekend</option></select></div>
+<div class="muted" id="modeNote"></div>
+</div>
+
+<div class="card" id="cpriv"><fieldset id="fpriv">
+<h2>1 · Private server: set Hour 0 (server birth)</h2>
+<div class="row"><label>Device time in your screenshot</label><input id="dev" type="text" placeholder="e.g. 6:41:23 PM" autocomplete="off" size="14"><button class="ghost" onclick="useNow('dev')">Use now</button></div>
+<div class="row"><label>Boss remaining</label><input id="rm" type="number" min="0" placeholder="min"><input id="rs" type="number" min="0" max="59" placeholder="sec">
+<label>Boss full timer</label><input id="fm" type="number" min="0" placeholder="e.g. 15"><input id="fs" type="number" min="0" max="59" placeholder="sec"></div>
+<div class="row"><button onclick="calc()">Calculate Hour 0</button><button class="ghost" onclick="startNow()">Server just started (Hour 0 = now)</button><button class="ghost" onclick="clearAll()">Clear</button></div>
+<div id="err" class="err"></div>
+<div class="note" style="margin:8px 0 0">⚠ Only works if the boss countdown starts the instant the private server is created. Built around the Sea 2 Diamond boss pad at Flower Mountain; for other pads, type that boss’s own full timer.</div>
+</fieldset></div>
+
+<div class="card" id="cpub"><fieldset id="fpub">
+<h2>1 · Public server: Factory Raid timestamp (Sea 2)</h2>
+<div class="row"><label>Factory type</label><select id="ptype"><option value="30">:30 factory (next fruit 30 min after)</option><option value="00">:00 factory (fruit spawns with it)</option></select></div>
+<div class="row"><label>Time you saw the Factory Raid notification</label><input id="pt" type="text" placeholder="e.g. 4:19:33 PM" autocomplete="off" size="14"><button class="ghost" onclick="useNow('pt')">Use now</button></div>
+<div class="row"><label>Seconds to subtract</label><input id="ps" type="number" min="0" value="30"><button onclick="calcPub()">Start from factory</button><button class="ghost" onclick="clearAll()">Clear</button></div>
+<div id="perr" class="err"></div>
+<div class="note" style="margin:8px 0 0">⚠ Assumes the Factory Raid repeats every 90 min from server birth, server fruits spawn every 60 min (weekdays) or 45 min (weekends), and fruits last 20 min. Weekends use one table for both factory types. Public mode is Sea 2 only for now.</div>
+</fieldset></div>
+
+<div class="card">
+<h2>Alarms &amp; settings</h2>
+<div class="row"><button id="en" onclick="enable()">🔔 Enable alarms</button><label>Alert</label>
+<select id="lead"><option value="0">at the event</option><option value="30">30 s early</option><option value="60">60 s early</option></select>
+<label>Volume</label><input id="vol" type="range" min="5" max="100" value="40"><label><input id="bal" type="checkbox"> Also alarm on berry spawns (private)</label></div>
+<div class="muted">Sound needs one tap on the page first (after a reload too). Keep this tab visible: browsers slow background tabs, so an alarm can arrive late.</div>
+</div>
+
+<div class="card" id="status"></div>
+<div class="card"><h2>Milestones (fruits and raids)</h2><div class="chips" id="ms"></div><div class="muted" id="fnote" style="margin-top:8px"></div></div>
+<div class="card" id="berr"><h2>🫐 Berries (separate from fruits)</h2><div id="bb"></div></div>
+<div class="card"><h2>Upcoming (next 6)</h2><div class="list" id="up"></div></div>
+
+<div class="note">🚨 Server fruits only appear at specific spawn locations. Without a fruit notifier you must know the exact spots: <a href="https://blox-fruits.fandom.com/wiki/Fruit_Spawn_Locations" target="_blank" rel="noopener">fruit spawn location guide</a>.</div>
+<div class="muted" style="margin:8px 0 24px">Fan-made tool, not affiliated with Roblox or the Blox Fruits developers. Timings come from player testing and may change. Your inputs stay in your own browser.</div>
+</div>
+
+<script>
+const $=i=>document.getElementById(i),p=n=>String(n).padStart(2,"0");
+const KEY="bfTimer1";let S={mode:"priv",h0:null,anc:null,ptype:"30",sea:"2",day:"auto",cd:120,lead:30,on:false,fired:{}};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const clock=ms=>new Date(ms).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true});
+const dur=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return(h?h+":"+p(m):m)+":"+p(s%60)};
+const A=()=>S.mode==="pub"?S.anc:S.h0;
+let EV=[],BE=[];
+function build(){
+ EV=[];BE=[];const a=A();if(!a)return;
+ const we=S.day==="auto"?[0,6].includes(new Date(a).getDay()):S.day==="we";
+ const add=(m,type,label,ms)=>EV.push({t:a+m*6e4,type,label,ms});
+ if(S.mode==="pub"){
+  (we?[0,45,90,135,180]:S.ptype==="30"?[30,90,150,210]:[0,60,120,180]).forEach((m,i)=>{add(m,"fruit","🍍 Server fruit spawns (#"+(i+1)+")",1);add(m+20,"fd","Server fruit despawns (#"+(i+1)+")",0)});
+  [0,90,180].forEach((m,i)=>add(m,"raid","🏭 Factory Raid #"+(i+1)+" starts",1));
+ }else{
+  
+  (we?[45,90]:[60,120]).forEach((m,i)=>{add(m,"fruit","🍍 Server fruit spawns (#"+(i+1)+")",1);add(m+20,"fd","Server fruit despawns (#"+(i+1)+")",0)});
+  const f=S.sea==="2";
+  (f?[90,180]:[75,150]).forEach((m,i)=>add(m,"raid",(f?"🏭 Factory Raid #":"☠️ Pirate Raid #")+(i+1)+" starts",1));
+  [20,45,70,95,120,145,170].forEach((m,i)=>{add(m,"bar","☕ Barista Cousin spawns (#"+(i+1)+")",0);add(m+20,"bd","Barista Cousin despawns (#"+(i+1)+")",0)});
+ }
+ EV.sort((a,b)=>a.t-b.t);
+ if(S.mode!=="pub")for(let m=15;m<=360;m+=15)BE.push({t:a+m*6e4,d:a+(m+60)*6e4,i:m/15});
+}
+function renderB(now,a,pub){
+ $("berr").style.display=pub?"none":"block";
+ $("fnote").textContent=pub?"":"Private server: 2 server fruits + 2 raids, plus 1 to 2 gacha rolls (not tracked here) = about 5 to 6 fruits in the first 3 hours, depending on whether your gacha is on cooldown at server start.";
+ if(pub)return;
+ const nb=BE.find(b=>b.t>now),ac=BE.filter(b=>b.t<=now&&b.d>now);
+ $("bb").innerHTML=!a?"<div class='muted'>Starts once Hour 0 is set. The first berry spawns 15 min after server start.</div>":(nb?"<div>Next berry spawns in <b>"+dur((nb.t-now)/1000)+"</b> · "+clock(nb.t)+"</div>":"<div class='muted'>No more berry spawns tracked.</div>")+"<div class='muted' style='margin:8px 0 4px'>Active berries ("+ac.length+"). Each despawns 1 hour after it spawns.</div><div class='list'>"+(ac.map(b=>"<div><span>Berry #"+b.i+"</span><span>despawns "+clock(b.d)+" · "+dur((b.d-now)/1000)+" left</span></div>").join("")||"<div class='muted'>None yet.</div>")+"</div>";
+}
+function render(){
+ const now=Date.now(),a=A(),pub=S.mode==="pub";
+ renderB(now,a,pub);
+ if(!a){$("status").innerHTML="<h2>Status</h2><div class='muted'>"+(pub?"Enter the Factory Raid notification time above and the timeline appears here.":"Enter your boss timer above (or press “Server just started”) and the timeline appears here.")+"</div>";$("ms").innerHTML="";$("up").innerHTML="";return}
+ const up=EV.filter(e=>e.t>now),nx=up.find(e=>e.ms);
+ $("status").innerHTML="<h2>Next milestone</h2>"+(nx?"<div class='big'>"+dur((nx.t-now)/1000)+"</div><div>"+nx.label+" · "+clock(nx.t)+"</div>":"<div class='big'>Done</div><div class='muted'>All milestones passed. Enter a new server above.</div>")+
+  "<div class='muted' style='margin-top:8px'>"+(pub?"Factory start ":"Hour 0 ")+clock(a)+" · "+(now>=a?(pub?"since factory ":"server age ")+dur((now-a)/1000):"starts in "+dur((a-now)/1000))+" · now "+clock(now)+"</div>";
+ $("ms").innerHTML=EV.filter(e=>e.ms).map(e=>"<span class='chip"+(e.t<=now?" done":e===nx?" next":"")+"'>"+(e.t<=now?"✓ ":"")+e.label.replace(/ (starts|ready)/,"")+" · "+clock(e.t)+"</span>").join("");
+ $("up").innerHTML=up.slice(0,6).map(e=>"<div><span>"+e.label+"</span><span>"+clock(e.t)+" · "+dur((e.t-now)/1000)+"</span></div>").join("")||"<div class='muted'>No more events for this server.</div>";
+}
+let AC;
+function beep(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();[0,.3,.6].forEach(d=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=880;g.gain.value=(S.vol||40)/100*.25;o.connect(g);g.connect(AC.destination);o.start(AC.currentTime+d);o.stop(AC.currentTime+d+.18)})}catch(e){}}
+function fire(e,left){
+ const m=e.label+(left>2?" in "+Math.round(left)+"s":" now!");
+ const a=$("alert");a.textContent="⏰ "+m+" (tap to dismiss)";a.style.display="block";
+ beep();try{if(window.Notification&&Notification.permission==="granted")new Notification("Blox Fruits Timer",{body:m})}catch(x){}
+ try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}
+}
+function tick(){
+ const now=Date.now(),a=A();
+ if(S.on&&a){let ch=0;const chk=e=>{const st=e.t-S.lead*1000,k=a+"|"+e.t+(e.b||"");if(now>=st&&now<st+90000&&e.t>now-5000&&!S.fired[k]){S.fired[k]=1;ch=1;fire(e,(e.t-now)/1000)}};EV.forEach(e=>{if(e.ms)chk(e)});if(S.bal)BE.forEach(b=>chk({t:b.t,b:"b",label:"🫐 Berry #"+b.i+" spawns"}));if(ch)save()}
+ render();
+}
+function enable(){
+ S.on=!S.on;save();setEn();
+ if(S.on){beep();try{window.Notification&&Notification.requestPermission()}catch(e){}}
+}
+function setEn(){$("en").textContent=S.on?"🔕 Turn alarms off":"🔔 Enable alarms";$("en").className=S.on?"ghost":""}
+function useNow(id){$(id).value=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true})}
+function parseClock(v){
+ const m=v.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap])\.?m?\.?$/i)||v.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?()$/);
+ if(!m)return"Type the time like 6:41:23 PM.";
+ let hr=+m[1];const ap=m[4].toLowerCase();
+ if(ap){if(hr<1||hr>12)return"With AM or PM the hour must be 1 to 12.";hr=hr%12+(ap==="p"?12:0)}
+ else if(hr>=1&&hr<=12)return"Add AM or PM, like 6:41:23 PM.";
+ else if(hr>23)return"The hour must be 0 to 23.";
+ const d=new Date();d.setHours(hr,+m[2],+m[3]||0,0);let t=d.getTime();if(t>Date.now()+90000)t-=864e5;return t;
+}
+function setAnchor(k,ms){S[k]=ms;S.fired={};save();build();render();$("err").textContent="";$("perr").textContent=""}
+function calc(){
+ const n=i=>parseFloat($(i).value);
+ if(!$("dev").value||isNaN(n("rm"))||isNaN(n("fm"))){$("err").textContent="Fill in the device time, the remaining minutes and the full timer minutes (seconds can stay empty).";return}
+ const rem=n("rm")*60+(n("rs")||0),full=n("fm")*60+(n("fs")||0);
+ if(rem>full){$("err").textContent="The remaining time can’t be bigger than the full timer.";return}
+ const r=parseClock($("dev").value);if(typeof r==="string"){$("err").textContent=r;return}
+ setAnchor("h0",r-(full-rem)*1000);
+}
+function calcPub(){
+ if(!$("pt").value){$("perr").textContent="Type the time you saw the Factory Raid notification.";return}
+ const r=parseClock($("pt").value);if(typeof r==="string"){$("perr").textContent=r;return}
+ S.ptype=$("ptype").value;setAnchor("anc",r-(+$("ps").value||0)*1000);
+}
+function startNow(){setAnchor("h0",Date.now())}
+function clearAll(){S[S.mode==="pub"?"anc":"h0"]=null;S.fired={};save();EV=[];render()}
+function applyUI(){
+ const pub=S.mode==="pub";
+ $("fpriv").disabled=pub;$("fpub").disabled=!pub;
+ $("cpriv").classList.toggle("off",pub);$("cpub").classList.toggle("off",!pub);
+ $("sea").disabled=pub;$("sea").value=pub?"2":S.sea;
+ $("bpriv").className=pub?"":"on";$("bpub").className=pub?"on":"";
+ $("modeNote").textContent=pub?"Public mode: the Factory Raid time is the clock (Sea 2 only). The private inputs are off.":"Private mode: the boss timer gives Hour 0. The public inputs are off.";
+}
+function setMode(m){S.mode=m;S.fired={};save();applyUI();build();render()}
+["sea","day","lead"].forEach(i=>$(i).addEventListener("change",()=>{S[i]=i==="lead"?+$(i).value:$(i).value;save();build();render()}));$("bal").addEventListener("change",()=>{S.bal=$("bal").checked;save()});$("bal").checked=!!S.bal;
+["sea","day","lead","ptype"].forEach(i=>{$(i).value=S[i]});
+setEn();$("vol").value=S.vol||40;$("vol").addEventListener("input",()=>{S.vol=+$("vol").value;save()});$("vol").addEventListener("change",beep);document.addEventListener("pointerdown",()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume()}catch(e){}});
+document.addEventListener("visibilitychange",tick);
+applyUI();build();render();setInterval(tick,1000);
+</script>
+</body>
+</html>
